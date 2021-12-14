@@ -1,4 +1,3 @@
-
 namespace WebApi.Helpers;
 
 using Microsoft.Extensions.Options;
