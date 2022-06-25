@@ -45,9 +45,16 @@ public class JwtMiddleware
 
             var jwtToken = (JwtSecurityToken)validatedToken;
             var userId = int.Parse(jwtToken.Claims.First(x => x.Type == "id").Value);
-
+            var userName = jwtToken.Claims.First(x => x.Type == "username").Value;
+            var tokenExpireat=jwtToken.ValidTo;
+              System.Collections.Hashtable ht=new System.Collections.Hashtable();
+            ht.Add("userId", userId);
+            ht.Add("userName", userName);
+            ht.Add("tokenExpireat", tokenExpireat);
+            context.Items["Token"] = ht;
             // attach user to context on successful jwt validation
             context.Items["User"] = userService.GetById(userId);
+
         }
         catch
         {
