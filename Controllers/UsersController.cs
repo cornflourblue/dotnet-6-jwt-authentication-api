@@ -31,7 +31,8 @@ public class UsersController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var users = _userService.GetAll();
-        return Ok(users);
+        //var users = _userService.GetAll();
+        var v = HttpContext.Items["Token"];
+        return Ok(v);
     }
 }

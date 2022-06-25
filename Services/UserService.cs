@@ -41,7 +41,7 @@ public class UserService : IUserService
         // authentication successful so generate jwt token
         var token = generateJwtToken(user);
 
-        return new AuthenticateResponse(user, token);
+        return new AuthenticateResponse(token);
     }
 
     public IEnumerable<User> GetAll()
@@ -63,8 +63,8 @@ public class UserService : IUserService
         var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
-            Expires = DateTime.UtcNow.AddDays(7),
+            Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()), new Claim("username", user.Username.ToString()) }),
+            Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);

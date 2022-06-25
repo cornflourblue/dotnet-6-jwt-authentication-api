@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
     // configure DI for application services
     services.AddScoped<IUserService, UserService>();
+   
 }
 
 var app = builder.Build();
@@ -21,6 +22,7 @@ var app = builder.Build();
 // configure HTTP request pipeline
 {
     // global cors policy
+    
     app.UseCors(x => x
         .AllowAnyOrigin()
         .AllowAnyMethod()
