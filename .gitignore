@@ -40,3 +40,17 @@ typings
 # .NET compiled files
 bin
 obj
+/.vs/WebApi/config/applicationhost.config
+/.vs/WebApi/DesignTimeBuild/.dtbcache.v2
+/.vs/WebApi/FileContentIndex/d2c99c02-18d1-4e62-8d8b-9b939a8ed857.vsidx
+/.vs/WebApi/FileContentIndex/2a847a1f-b1bd-402c-a927-474b2885606f.vsidx
+/.vs/WebApi/FileContentIndex/0751582d-cbbd-40ce-9c77-feded8c2da6e.vsidx
+/.vs/WebApi/FileContentIndex/a0a4dcce-d57f-46b0-859c-b3e39871982c.vsidx
+/.vs/WebApi/FileContentIndex/9e0e986a-9320-4fe6-8e74-9b4862d39a7f.vsidx
+/.vs/WebApi/FileContentIndex/read.lock
+/.vs/WebApi/v17/.suo
+/.vs/WebApi/v17/TestStore/0/000.testlog
+/.vs/WebApi/v17/TestStore/0/testlog.manifest
+/.vs/WebApi/FileContentIndex/2d04d38d-740f-4d3c-81be-4d99597269d6.vsidx
+/WebApi.sln
+/.vs/WebApi/FileContentIndex/e47c464c-ce87-4ef1-aa1c-5ed370ec58ae.vsidx
