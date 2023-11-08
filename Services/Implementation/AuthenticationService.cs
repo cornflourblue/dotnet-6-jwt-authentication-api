@@ -1,5 +1,4 @@
-namespace WebApi.Services;
-
+namespace WebApi.Services.Implementation;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -7,18 +6,13 @@ using System.Security.Claims;
 using System.Text;
 using WebApi.Entities;
 using WebApi.Helpers;
+using WebApi.Infrascture.Command;
 using WebApi.Models;
+using WebApi.Services.Contracts;
 
-public interface IUserService
+public class AuthenticationService : IAuthenticationJWTService
 {
-    AuthenticateResponse Authenticate(AuthenticateRequest model);
-    IEnumerable<User> GetAll();
-    User GetById(int id);
-}
-
-public class UserService : IUserService
-{
-    // users hardcoded for simplicity, store in a db with hashed passwords in production applications
+ 
     private List<User> _users = new List<User>
     {
         new User { Id = 1, FirstName = "Test", LastName = "User", Username = "test", Password = "test" }
@@ -26,25 +20,20 @@ public class UserService : IUserService
 
     private readonly AppSettings _appSettings;
 
-    public UserService(IOptions<AppSettings> appSettings)
+    public AuthenticationService(IOptions<AppSettings> appSettings)
     {
         _appSettings = appSettings.Value;
     }
 
-    public AuthenticateResponse Authenticate(AuthenticateRequest model)
+    public AuthenticateResponse Authenticate(AuthenticateRequestCommand command)
     {
-        var user = _users.SingleOrDefault(x => x.Username == model.Username && x.Password == model.Password);
-
-        // return null if user not found
+        var user = _users.SingleOrDefault(x => x.Username == command.Username && x.Password == command.Password);
         if (user == null) return null;
-
-        // authentication successful so generate jwt token
         var token = generateJwtToken(user);
-
-        return new AuthenticateResponse(user, token);
+        return new AuthenticateResponse(token);
     }
 
-    public IEnumerable<User> GetAll()
+    public List<User> GetAll()
     {
         return _users;
     }
@@ -63,7 +52,12 @@ public class UserService : IUserService
         var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
+            Subject = new ClaimsIdentity(
+            new[]
+            {
+                new Claim("id", user.Id.ToString())
+            }
+            ),
             Expires = DateTime.UtcNow.AddDays(7),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };

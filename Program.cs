@@ -1,19 +1,19 @@
-﻿using WebApi.Helpers;
-using WebApi.Services;
+﻿using MediatR;
+using WebApi.Aplication.IoC;
+using WebApi.Helpers;
+using WebApi.Services.Contracts;
+using WebApi.Services.Implementation;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// add services to DI container
 {
     var services = builder.Services;
     services.AddCors();
     services.AddControllers();
-
-    // configure strongly typed settings object
+    services.AddMediatR(typeof(Program).Assembly);
+    services.AddCustomApplicationServices();
     services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
-
-    // configure DI for application services
-    services.AddScoped<IUserService, UserService>();
+    services.AddScoped<IAuthenticationJWTService, AuthenticationService>();
+    
 }
 
 var app = builder.Build();
