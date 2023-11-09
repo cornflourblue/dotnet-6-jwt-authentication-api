@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
     {
         opt.UseSqlServer(builder.Configuration.GetConnectionString("Server"));
     });
-
+   
 }
 
 var app = builder.Build();
@@ -28,6 +28,7 @@ var app = builder.Build();
         .AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader());
+  
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -35,7 +36,6 @@ var app = builder.Build();
         c.RoutePrefix = "swagger";
     });
     app.UseMiddleware<JwtMiddleware>();
-
     app.MapControllers();
 }
 

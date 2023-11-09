@@ -1,8 +1,10 @@
 namespace WebApi.Services.Implementation;
 
 using FluentValidation;
+using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Office.Interop.Outlook;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -12,6 +14,7 @@ using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Models;
 using WebApi.Services.Contracts;
+using WebApi.Services.SMTP;
 
 public class AuthenticationService : IAuthenticationJWTService
 {
@@ -52,6 +55,17 @@ public class AuthenticationService : IAuthenticationJWTService
         using var context = this.context;
         this.context.Users.Add(user);
         await this.context.SaveChangesAsync();
+        var objLogic = new SendEmailService();
+        //string body = @"<style>
+        //                    h1{color:dodgerblue;}
+        //                    h2{color:darkorange;}
+        //                    </style>
+        //                    <h1>Este es el body del correo</h1></br>
+        //                    <h2>Este es el segundo párrafo</h2>";
+        //objLogic.sendMail("leosanchez_19@hotmail.com", "Este correo fue enviado via C-sharp", body);
+        StringBuilder message = new StringBuilder();
+        message.Append("hello wordl");
+        objLogic.sendMail("eduarleonardosanchez20@gmail.com", "leosanchez_19@hotmail.com", "C#", "smtp.gmail.com");
         return user.Iduser;
     }
 
