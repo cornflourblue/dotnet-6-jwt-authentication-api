@@ -2,7 +2,6 @@
 {
     using AutoMapper;
     using FluentValidation;
-    using FluentValidation.Results;
     using MediatR;
     using System.Threading;
     using System.Threading.Tasks;
@@ -27,12 +26,9 @@
         public Task<AuthenticationTokenDto> Handle(AuthenticateRequestCommand request, CancellationToken cancellationToken)
         {
             var responseDTO = new AuthenticationTokenDto();
-            ValidationResult validationResult = validator.Validate(request);
-            if (validationResult.IsValid)
-            {
-                var response = authentacationService.Authenticate(request);
-                responseDTO = new AuthenticationTokenDto { Token = response.Token };
-            }
+            var response = authentacationService.Authenticate(request);
+            responseDTO = !string.IsNullOrEmpty(response.Token)
+                ? new AuthenticationTokenDto { Token = response.Token } : responseDTO;
             return Task.FromResult(responseDTO);
         }
     }

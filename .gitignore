@@ -48,3 +48,8 @@ obj
 .manifest
 .sln
 /WebApi.sln
+/WebApi.csproj.user
+/Properties/PublishProfiles/FolderProfile.pubxml
+/Properties/PublishProfiles/FolderProfile.pubxml.user
+/.vs/WebApi/v17/TestStore/0/testlog.manifest
+/.vs/WebApi/v17/TestStore/0/000.testlog

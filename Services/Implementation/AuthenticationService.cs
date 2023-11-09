@@ -1,10 +1,13 @@
 namespace WebApi.Services.Implementation;
+
+using FluentValidation;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using WebApi.Entities;
+using System.Threading.Tasks;
+using WebApi.Context;
 using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Models;
@@ -12,50 +15,56 @@ using WebApi.Services.Contracts;
 
 public class AuthenticationService : IAuthenticationJWTService
 {
- 
-    private List<User> _users = new List<User>
-    {
-        new User { Id = 1, FirstName = "Test", LastName = "User", Username = "test", Password = "test" }
-    };
+    private readonly tokenjwtContext context;
+    private readonly AppSettings appSettings;
+    private readonly IValidator<User> validator;
 
-    private readonly AppSettings _appSettings;
-
-    public AuthenticationService(IOptions<AppSettings> appSettings)
+    public AuthenticationService(tokenjwtContext context,
+                                 IOptions<AppSettings> appSettings,
+                                 IValidator<User> validator)
     {
-        _appSettings = appSettings.Value;
+        this.context = context;
+        this.appSettings = appSettings.Value;
+        this.validator = validator;
     }
+
 
     public AuthenticateResponse Authenticate(AuthenticateRequestCommand command)
     {
-        var user = _users.SingleOrDefault(x => x.Username == command.Username && x.Password == command.Password);
-        if (user == null) return null;
-        var token = generateJwtToken(user);
-        return new AuthenticateResponse(token);
+        using var context = this.context;
+        var user = this.context.Users.FirstOrDefault(u => u.Name == command.Username && u.Password == command.Password);
+        return user is not null ? new AuthenticateResponse(generateJwtToken(user)) : null;
     }
 
     public List<User> GetAll()
     {
-        return _users;
+        using (var context = this.context)
+        return this.context.Users.ToList();
     }
 
     public User GetById(int id)
     {
-        return _users.FirstOrDefault(x => x.Id == id);
+        return this.context.Users.FirstOrDefault(x => x.Iduser == id);
     }
 
-    // helper methods
+    public async Task<int> CreateUserAsync(User user)
+    {
+        using var context = this.context;
+        this.context.Users.Add(user);
+        await this.context.SaveChangesAsync();
+        return user.Iduser;
+    }
 
     private string generateJwtToken(User user)
     {
-        // generate token that is valid for 7 days
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+        var key = Encoding.ASCII.GetBytes(appSettings.Secret);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            new[]
+            Subject = new ClaimsIdentity(new[]
             {
-                new Claim("id", user.Id.ToString())
+                new Claim(ClaimTypes.IsPersistent, user.Iduser.ToString()),
+                new Claim(ClaimTypes.Name, user.Name.ToString())
             }
             ),
             Expires = DateTime.UtcNow.AddDays(7),

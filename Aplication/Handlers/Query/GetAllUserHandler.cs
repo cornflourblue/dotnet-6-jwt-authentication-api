@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using WebApi.Aplication.DTOs;
-using WebApi.Entities;
 using WebApi.Infrascture.Command;
 using WebApi.Infrascture.Querys;
 using WebApi.Services.Contracts;
@@ -23,10 +22,8 @@ namespace WebApi.Aplication.Handlers.Query
             var response = this.authentacationService.GetAll();
             List<UserResponseDto> usersDto = response.Select(user => new UserResponseDto
             {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Username = user.Username
+                Id = user.Iduser,
+                Name = user.Name,
             }).ToList();
 
             return Task.FromResult(usersDto);

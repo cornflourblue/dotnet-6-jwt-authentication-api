@@ -1,5 +1,7 @@
 ﻿using MediatR;
-using WebApi.Aplication.IoC;
+using Microsoft.EntityFrameworkCore;
+using WebApi.Configuration;
+using WebApi.Context;
 using WebApi.Helpers;
 using WebApi.Services.Contracts;
 using WebApi.Services.Implementation;
@@ -13,23 +15,28 @@ var builder = WebApplication.CreateBuilder(args);
     services.AddCustomApplicationServices();
     services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
     services.AddScoped<IAuthenticationJWTService, AuthenticationService>();
-    
+    services.AddDbContext<tokenjwtContext>(opt =>
+    {
+        opt.UseSqlServer(builder.Configuration.GetConnectionString("Server"));
+    });
+
 }
 
 var app = builder.Build();
-
-// configure HTTP request pipeline
 {
-    // global cors policy
     app.UseCors(x => x
         .AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader());
-
-    // custom jwt auth middleware
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        c.RoutePrefix = "swagger";
+    });
     app.UseMiddleware<JwtMiddleware>();
 
     app.MapControllers();
 }
 
-app.Run("http://localhost:4000");
+app.Run();

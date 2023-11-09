@@ -1,9 +1,8 @@
 ﻿using FluentValidation;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
-using WebApi.Aplication.Handlers.Mapping;
-using WebApi.Aplication.Handlers.Validator;
 
-namespace WebApi.Aplication.IoC
+namespace WebApi.Configuration
 {
     public static class ServiceRegistration
     {
@@ -11,6 +10,11 @@ namespace WebApi.Aplication.IoC
         {
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Token JWT", Version = "v1" });
+            });
+            services.AddSwaggerGen();
             return services;
         }
     }

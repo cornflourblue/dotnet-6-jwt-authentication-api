@@ -8,6 +8,7 @@ using WebApi.Aplication.DTOs;
 using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Infrascture.Querys;
+using WebApi.Infrastructure.Command;
 using WebApi.Models;
 using WebApi.Services;
 
@@ -23,16 +24,19 @@ public class AuthenticationController : ControllerBase
         this.mediator = mediator;
     }
 
-    [HttpPost("api/token")]
+    [HttpPost("api")]
     public async Task<ActionResult<UserResponseDto>> Authenticate(AuthenticateRequestCommand command)
     {
         var response = await this.mediator.Send(command);
         return Ok(response);
-        //var response = _userService.Authenticate(command);
-        //if (response == null)
-        //    return BadRequest(new { message = "Username or password is incorrect" });
+    }
 
-        //return Ok(response);
+    [Authorize]
+    [HttpPost("api/user")]
+    public async Task<ActionResult<int>> Crete(AuthenticateRequestCommand command)
+    {
+        var userId = await this.mediator.Send(new CreateUserCommand() { Username = command.Username, Password = command.Password });
+        return Ok(userId);
     }
 
     [Authorize]
@@ -42,4 +46,5 @@ public class AuthenticationController : ControllerBase
         var users = await this.mediator.Send(new GetAllUserQuery());
         return Ok(users);
     }
+    
 }

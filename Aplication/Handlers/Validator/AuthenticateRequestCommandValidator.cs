@@ -7,9 +7,9 @@
         public AuthenticateRequestCommandValidator()
         {
             RuleFor(request => request.Username)
-                .NotEmpty().WithMessage("Name is mandory");
+                .NotEmpty().NotNull().WithMessage("Name is mandory");
             RuleFor(request => request.Password)
-                .NotEmpty().WithMessage("Password is mandatory");
+                .NotEmpty().NotNull().WithMessage("Password is mandatory");
         }
     }
 }

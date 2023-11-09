@@ -1,7 +1,5 @@
 namespace WebApi.Models;
 
-using WebApi.Entities;
-
 public class AuthenticateResponse
 {
     public string Token { get; set; }
