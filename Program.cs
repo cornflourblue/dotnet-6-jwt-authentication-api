@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using WebApi.Configuration;
 using WebApi.Context;
-using WebApi.Helpers;
+using WebApi.Middkeware;
+using WebApi.Models.Config;
 using WebApi.Models.RabbitMQ;
 using WebApi.Services.Contracts;
 using WebApi.Services.Contracts.Implementation;
@@ -11,16 +11,24 @@ using WebApi.Services.Contracts.Implementation;
 var builder = WebApplication.CreateBuilder(args);
 {
     var services = builder.Services;
+    var azureAppConfigConnectionString = builder.Configuration["ConnectionStrings:AppConfig"];
+    var configBuilder = new ConfigurationBuilder();
+    configBuilder.AddAzureAppConfiguration(options =>
+    {
+        options.Connect(azureAppConfigConnectionString)
+               .UseFeatureFlags();
+    });
+
+    var azureAppConfig = configBuilder.Build();
+    services.AddSingleton<IConfiguration>(azureAppConfig);
     services.AddCors();
     services.AddControllers();
     services.AddMediatR(typeof(Program).Assembly);
     services.AddCustomApplicationServices();
-    services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
-    services.Configure<RabbitMQConfiguration>(builder.Configuration.GetSection("RabbitMQ"));
     services.AddScoped<IAuthenticationJWTService, AuthenticationService>();
     services.AddDbContext<tokenjwtContext>(opt =>
     {
-        opt.UseSqlServer(builder.Configuration.GetConnectionString("Server"));
+        opt.UseSqlServer(azureAppConfig["MicroserviceAuthentication:Server"]);
     });
     
 }

@@ -1,22 +1,22 @@
-namespace WebApi.Helpers;
+namespace WebApi.Middkeware;
 
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using WebApi.Models.Config;
 using WebApi.Services.Contracts;
 
 public class JwtMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly AppSettings _appSettings;
+    private readonly IConfiguration configuration;
 
     public JwtMiddleware(RequestDelegate next,
-                         IOptions<AppSettings> appSettings)
+                         IConfiguration configuration)
     {
         _next = next;
-        _appSettings = appSettings.Value;
+        this.configuration = configuration;
     }
 
     public async Task Invoke(HttpContext context, IAuthenticationJWTService userService)
@@ -29,12 +29,21 @@ public class JwtMiddleware
         await _next(context);
     }
 
+    private AppSettings retrive(IConfiguration configuration)
+    {
+        return new AppSettings()
+        {
+            Secret = configuration["MicroserviceAuthentication:AppSettings:Secret"].Trim(),
+          
+        };
+    }
+
     private void attachUserToContext(HttpContext context, IAuthenticationJWTService userService, string token)
     {
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+            var key = Encoding.ASCII.GetBytes(this.retrive(this.configuration).Secret);
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,

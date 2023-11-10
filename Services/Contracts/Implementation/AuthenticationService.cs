@@ -1,6 +1,7 @@
 namespace WebApi.Services.Contracts.Implementation;
 
 using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -11,29 +12,28 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using WebApi.Context;
-using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Models;
+using WebApi.Models.Config;
 using WebApi.Models.RabbitMQ;
 using WebApi.Services.Contracts;
-using WebApi.Services.SMS;
 
 public class AuthenticationService : IAuthenticationJWTService
 {
     private readonly tokenjwtContext context;
     private readonly AppSettings appSettings;
     private readonly IValidator<User> validator;
-    private readonly RabbitMQConfiguration rabbitMQConfiguration;
+    private readonly IConfiguration configuration;
 
     public AuthenticationService(tokenjwtContext context,
                                  IOptions<AppSettings> appSettings,
                                  IValidator<User> validator,
-                                 IOptions<RabbitMQConfiguration> rabbitMQConfiguration)
+                                 IConfiguration configuration)
     {
         this.context = context;
         this.appSettings = appSettings.Value;
         this.validator = validator;
-        this.rabbitMQConfiguration = rabbitMQConfiguration.Value;
+        this.configuration = configuration;
     }
 
 
@@ -41,7 +41,7 @@ public class AuthenticationService : IAuthenticationJWTService
     {
         using var context = this.context;
         var user = this.context.Users.FirstOrDefault(u => u.Name == command.Username && u.Password == command.Password);
-        return user is not null ? new AuthenticateResponse(generateJwtToken(user)) : null;
+        return user is not null ? new AuthenticateResponse(GenerateJwtToken(user)) : null;
     }
 
     public List<User> GetAll()
@@ -60,38 +60,56 @@ public class AuthenticationService : IAuthenticationJWTService
         using var context = this.context;
         this.context.Users.Add(user);
         await this.context.SaveChangesAsync();
-        var SendSMS = new SendSMSService();
-        await SendSMS.SendAsync();
+        //var SendSMS = new SendSMSService();
+        //await SendSMS.SendAsync();
+        foreach (var key in configuration.AsEnumerable())
+        {
+            Console.WriteLine($"Key: {key.Key}, Value: {key.Value}");
+        }
+
         this.NotificationEventBus();
         return user.Iduser;
     }
 
+    private RabbitMQConfiguration retrive(IConfiguration configuration)
+    {
+        return new RabbitMQConfiguration()
+        {
+            Uri = configuration["MicroserviceAuthentication:RabbitMQ:Uri"].Trim(),
+            Queue = configuration["MicroserviceAuthentication:RabbitMQ:Queue"].Trim(),
+            durable = bool.TryParse(configuration["MicroserviceAuthentication:RabbitMQ:durable"], out bool durable) && durable,
+            exclusive = bool.TryParse(configuration["MicroserviceAuthentication:RabbitMQ:exclusive"], out bool exclusive) && exclusive,
+            autoDelete = bool.TryParse(configuration["MicroserviceAuthentication:RabbitMQ:autoDelete"], out bool autoDelete) && autoDelete,
+            arguments = null ,//JsonConvert.DeserializeObject<Dictionary<string, object>>(configuration["MicroserviceAuthentication:RabbitMQ:arguments"]) ?? null,
+            exchange = configuration["MicroserviceAuthentication:RabbitMQ:exchange"].Trim(),
+        };
+    }
 
     private void NotificationEventBus()
     {
-        Dictionary<string, object> argumentsConfig = this.rabbitMQConfiguration.arguments;
-        var factory = new ConnectionFactory() { Uri = new Uri(this.rabbitMQConfiguration.Uri) };
+        var rabbitMQConfigurationRetrive = this.retrive(configuration);
+        var factory = new ConnectionFactory() { Uri = new Uri(rabbitMQConfigurationRetrive.Uri) };
         using (var connection = factory.CreateConnection())
         {
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(queue: this.rabbitMQConfiguration.Queue,
-                                     durable: this.rabbitMQConfiguration.durable,
-                                     exclusive: this.rabbitMQConfiguration.exclusive,
-                                     autoDelete: this.rabbitMQConfiguration.autoDelete,
-                                     arguments: argumentsConfig);
+                channel.QueueDeclare(queue: rabbitMQConfigurationRetrive.Queue,
+                                     durable: rabbitMQConfigurationRetrive.durable,
+                                     exclusive: rabbitMQConfigurationRetrive.exclusive,
+                                     autoDelete: rabbitMQConfigurationRetrive.autoDelete,
+                                     arguments: rabbitMQConfigurationRetrive.arguments);
 
-                string jsonMessage = JsonConvert.SerializeObject(this.rabbitMQConfiguration);
+                string jsonMessage = JsonConvert.SerializeObject(rabbitMQConfigurationRetrive);
                 byte[] body = Encoding.UTF8.GetBytes(jsonMessage);
-                channel.BasicPublish(exchange: this.rabbitMQConfiguration.exchange,
-                                     routingKey: this.rabbitMQConfiguration.Queue,
-                                     basicProperties: this.rabbitMQConfiguration.basicProperties,
+                channel.BasicPublish(exchange: rabbitMQConfigurationRetrive.exchange,
+                                     routingKey: rabbitMQConfigurationRetrive.Queue,
+                                     basicProperties: null,
                                      body: body);
             }
         }
     }
 
-    private string generateJwtToken(User user)
+    private string GenerateJwtToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(appSettings.Secret);

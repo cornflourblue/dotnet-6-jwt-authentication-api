@@ -11,6 +11,5 @@ namespace WebApi.Models.RabbitMQ
         public Boolean autoDelete { get; set; }
         public Dictionary<string, object> arguments { get; set;}
         public string exchange { get; set; }
-        public IBasicProperties basicProperties { get; set; }
     }
 }

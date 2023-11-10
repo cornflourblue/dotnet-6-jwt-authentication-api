@@ -1,4 +1,4 @@
-namespace WebApi.Helpers;
+namespace WebApi.Models.Config;
 
 public class AppSettings
 {

@@ -20,6 +20,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Exchange.WebServices" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="6.1.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
         <PackageReference Include="Microsoft.Office.Interop.Outlook" Version="15.0.4797.1004" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
