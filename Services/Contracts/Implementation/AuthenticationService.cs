@@ -1,10 +1,11 @@
-namespace WebApi.Services.Implementation;
+namespace WebApi.Services.Contracts.Implementation;
 
 using FluentValidation;
-using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Office.Interop.Outlook;
+using Newtonsoft.Json;
+using RabbitMQ.Client;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -13,22 +14,26 @@ using WebApi.Context;
 using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Models;
+using WebApi.Models.RabbitMQ;
 using WebApi.Services.Contracts;
-using WebApi.Services.SMTP;
+using WebApi.Services.SMS;
 
 public class AuthenticationService : IAuthenticationJWTService
 {
     private readonly tokenjwtContext context;
     private readonly AppSettings appSettings;
     private readonly IValidator<User> validator;
+    private readonly RabbitMQConfiguration rabbitMQConfiguration;
 
     public AuthenticationService(tokenjwtContext context,
                                  IOptions<AppSettings> appSettings,
-                                 IValidator<User> validator)
+                                 IValidator<User> validator,
+                                 IOptions<RabbitMQConfiguration> rabbitMQConfiguration)
     {
         this.context = context;
         this.appSettings = appSettings.Value;
         this.validator = validator;
+        this.rabbitMQConfiguration = rabbitMQConfiguration.Value;
     }
 
 
@@ -42,12 +47,12 @@ public class AuthenticationService : IAuthenticationJWTService
     public List<User> GetAll()
     {
         using (var context = this.context)
-        return this.context.Users.ToList();
+            return this.context.Users.ToList();
     }
 
     public User GetById(int id)
     {
-        return this.context.Users.FirstOrDefault(x => x.Iduser == id);
+        return context.Users.FirstOrDefault(x => x.Iduser == id);
     }
 
     public async Task<int> CreateUserAsync(User user)
@@ -55,18 +60,35 @@ public class AuthenticationService : IAuthenticationJWTService
         using var context = this.context;
         this.context.Users.Add(user);
         await this.context.SaveChangesAsync();
-        var objLogic = new SendEmailService();
-        //string body = @"<style>
-        //                    h1{color:dodgerblue;}
-        //                    h2{color:darkorange;}
-        //                    </style>
-        //                    <h1>Este es el body del correo</h1></br>
-        //                    <h2>Este es el segundo párrafo</h2>";
-        //objLogic.sendMail("leosanchez_19@hotmail.com", "Este correo fue enviado via C-sharp", body);
-        StringBuilder message = new StringBuilder();
-        message.Append("hello wordl");
-        objLogic.sendMail("eduarleonardosanchez20@gmail.com", "leosanchez_19@hotmail.com", "C#", "smtp.gmail.com");
+        var SendSMS = new SendSMSService();
+        await SendSMS.SendAsync();
+        this.NotificationEventBus();
         return user.Iduser;
+    }
+
+
+    private void NotificationEventBus()
+    {
+        Dictionary<string, object> argumentsConfig = this.rabbitMQConfiguration.arguments;
+        var factory = new ConnectionFactory() { Uri = new Uri(this.rabbitMQConfiguration.Uri) };
+        using (var connection = factory.CreateConnection())
+        {
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(queue: this.rabbitMQConfiguration.Queue,
+                                     durable: this.rabbitMQConfiguration.durable,
+                                     exclusive: this.rabbitMQConfiguration.exclusive,
+                                     autoDelete: this.rabbitMQConfiguration.autoDelete,
+                                     arguments: argumentsConfig);
+
+                string jsonMessage = JsonConvert.SerializeObject(this.rabbitMQConfiguration);
+                byte[] body = Encoding.UTF8.GetBytes(jsonMessage);
+                channel.BasicPublish(exchange: this.rabbitMQConfiguration.exchange,
+                                     routingKey: this.rabbitMQConfiguration.Queue,
+                                     basicProperties: this.rabbitMQConfiguration.basicProperties,
+                                     body: body);
+            }
+        }
     }
 
     private string generateJwtToken(User user)

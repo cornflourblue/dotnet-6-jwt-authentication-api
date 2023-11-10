@@ -80,8 +80,6 @@
                 smtp.Credentials = new NetworkCredential("eduarleonardosanchez20@gmail.com", "lhfgwfhorcgqklxd");
                 smtp.EnableSsl = false;
                 smtp.Send(mail);
-
-
             }
             catch (Exception e)
             {

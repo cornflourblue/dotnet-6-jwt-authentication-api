@@ -1,16 +1,12 @@
 ﻿namespace WebApi.Controllers;
 
-using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using WebApi.Aplication.DTOs;
 using WebApi.Helpers;
 using WebApi.Infrascture.Command;
 using WebApi.Infrascture.Querys;
 using WebApi.Infrastructure.Command;
-using WebApi.Models;
-using WebApi.Services;
 
 [ApiController]
 [Route("[controller]")]
